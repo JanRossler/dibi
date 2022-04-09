@@ -579,7 +579,8 @@ class PostgreDriver implements Dibi\Driver, Dibi\ResultDriver, Dibi\Reflector
 					a.atttypmod-4 AS character_maximum_length,
 					NOT a.attnotnull AS is_nullable,
 					a.attnum AS ordinal_position,
-					pg_get_expr(adef.adbin, adef.adrelid) AS column_default
+					pg_get_expr(adef.adbin, adef.adrelid) AS column_default,
+					CASE WHEN a.attidentity IN ('a', 'd') THEN 'YES' ELSE 'NO' END AS is_identity
 				FROM
 					pg_attribute a
 					JOIN pg_type ON a.atttypid = pg_type.oid
@@ -604,7 +605,7 @@ class PostgreDriver implements Dibi\Driver, Dibi\ResultDriver, Dibi\Reflector
 				'size' => $size > 0 ? $size : null,
 				'nullable' => $row['is_nullable'] === 'YES' || $row['is_nullable'] === 't',
 				'default' => $row['column_default'],
-				'autoincrement' => substr($row['column_default'], 0, 8) === 'nextval(',
+				'autoincrement' => $row['is_identity'] === 'YES' || substr($row['column_default'], 0, 8) === 'nextval(',
 				'vendor' => $row,
 			];
 		}
